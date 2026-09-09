@@ -1,0 +1,69 @@
+﻿Student_Name,Semester,Session,Subject_Name,Subject_Code,ESE_Obtained,ESE_Max,CIA_Obtained,CIA_Max,Total_Obtained,Total_Max,Credit,Grade,SGPA,Percentage
+NAME,1,2023-24,Matrices and Calculus,NBS4101,0,60,0,40,0,100,4,0,0,0
+NAME,1,2023-24,Engineering Chemistry,NBS4103,0,60,0,40,0,100,4,0,0,0
+NAME,1,2023-24,Computer Concepts and Programming in C,NCS4101,0,60,0,40,0,100,3,0,0,0
+NAME,1,2023-24,Basic of Artificial Intelligence,NCS4102,0,60,0,40,0,100,3,0,0,0
+NAME,1,2023-24,Basic Electrical Engineering,NEE4101,0,60,0,40,0,100,4,0,0,0
+NAME,1,2023-24,Communicative English,NHSCC1101,0,60,0,40,0,100,3,0,0,0
+NAME,1,2023-24,Engineering Chemistry Lab,NBS4153,0,60,0,40,0,100,1,0,0,0
+NAME,1,2023-24,Computer Programming in C Lab,NCS4151,0,60,0,40,0,100,1,0,0,0
+NAME,1,2023-24,Basic Electrical Engineering Lab,NEE4151,0,60,0,40,0,100,1,0,0,0
+NAME,1,2023-24,Engineering Graphics Lab,NME4153,0,60,0,40,0,100,1,0,0,0
+NAME,1,2023-24,General Proficiency,NGP4101,N/A,N/A,0,100,0,100,1,0,0,0
+,,,,,,,,,,,,,,
+NAME,2,2023-24,Differential Equations and Fourier Analysis,NBS4201,0,60,0,40,0,100,4,0,0,0
+NAME,2,2023-24,Engineering Physics,NBS4202,0,60,0,40,0,100,4,0,0,0
+NAME,2,2023-24,Engineering Mechanics,NME4201,0,60,0,40,0,100,4,0,0,0
+NAME,2,2023-24,Basic Electronics Engineering,NEC4201,0,60,0,40,0,100,3,0,0,0
+NAME,2,2023-24,Enviroment and Ecological Sustainability,NBSCC1201,0,60,0,40,0,100,3,0,0,0
+NAME,2,2023-24,Programming Concepts with Python,NCS4201,0,60,0,40,0,100,3,0,0,0
+NAME,2,2023-24,Engineering Physics Lab,NBS4252,0,60,0,40,0,100,1,0,0,0
+NAME,2,2023-24,Engineering Mechanics Lab,NME4251,0,60,0,40,0,100,1,0,0,0
+NAME,2,2023-24,Workshop Practices,NME4252,0,60,0,40,0,100,1,0,0,0
+NAME,2,2023-24,Python Programming Lab,NCS4251,0,60,0,40,0,100,1,0,0,0
+NAME,2,2023-24,General Proficiency,NGP4201,N/A,N/A,0,100,0,100,1,0,0,0
+,,,,,,,,,,,,,,
+NAME,3,2024-25,Complex Analysis and Integral Transforms,NBS4301,0,60,0,40,0,100,4,0,0,0
+NAME,3,2024-25,Artificial Intelligence in Mechanical Engineering Systems,NAI4302,0,60,0,40,0,100,4,0,0,0
+NAME,3,2024-25,Discrete Mathematics,NCS4301,0,60,0,40,0,100,3,0,0,0
+NAME,3,2024-25,Data Structure using 'C',NCS4302,0,60,0,40,0,100,4,0,0,0
+NAME,3,2024-25,Digital Logic Design,NCS4303,0,60,0,40,0,100,3,0,0,0
+NAME,3,2024-25,Industrial Sociology,NHS4302,0,60,0,40,0,100,2,0,0,0
+NAME,3,2024-25,Indian Constitution,NVC4301,0,60,0,40,0,100,1,0,0,0
+NAME,3,2024-25,Data Structure Lab,NCS4352,0,60,0,40,0,100,1,0,0,0
+NAME,3,2024-25,Digital Logic Design Lab,NCS4353,0,60,0,40,0,100,1,0,0,0
+NAME,3,2024-25,General Proficiency,NGP4301,N/A,N/A,0,100,0,100,1,0,0,0
+,,,,,,,,,,,,,,
+NAME,4,2024-25,Concepts of Machine Learning With Python,NAI4401,0,60,0,40,0,100,3,0,0,0
+NAME,4,2024-25,Statistical and Numerical Techniques,NBS4401,0,60,0,40,0,100,3,0,0,0
+NAME,4,2024-25,Database Management Systems,NCS4401,0,60,0,40,0,100,4,0,0,0
+NAME,4,2024-25,Operating Systems,NCS4402,0,60,0,40,0,100,4,0,0,0
+NAME,4,2024-25,Computer Organization & Architecture,NCS4404,0,60,0,40,0,100,4,0,0,0
+NAME,4,2024-25,Organizational Behavior,NHS4401,0,60,0,40,0,100,2,0,0,0
+NAME,4,2024-25,Machine Learning Lab,NAI4451,0,60,0,40,0,100,1,0,0,0
+NAME,4,2024-25,NSS/YOGA,NCC4451,N/A,N/A,0,100,0,100,1,0,0,0
+NAME,4,2024-25,Database Management Systems Lab,NCS4451,0,60,0,40,0,100,1,0,0,0
+NAME,4,2024-25,General Proficiency,NGP4401,N/A,N/A,0,100,0,100,1,0,0,0
+,,,,,,,,,,,,,,
+NAME,5,2025-26,Engineering & Managerial Economics,NHS4501,0,60,0,40,0,100,3,0,0,0
+NAME,5,2025-26,Essence of Indian Knowledge Tradition,NVC4501,0,60,0,40,0,100,1,0,0,0
+NAME,5,2025-26,Concepts of Data Science with Python,NAI4501,0,60,0,40,0,100,3,0,0,0
+NAME,5,2025-26,Artificial Neural Network,NAI4502,0,60,0,40,0,100,3,0,0,0
+NAME,5,2025-26,Computer Networks,NCS4503,0,60,0,40,0,100,3,0,0,0
+NAME,5,2025-26,Automata Theory and Formal Languages,NCS4504,0,60,0,40,0,100,4,0,0,0
+NAME,5,2025-26,Data Science with Python Lab,NAI4551,0,60,0,40,0,100,1,0,0,0
+NAME,5,2025-26,Computer Networks Lab,NCS4553,0,60,0,40,0,100,1,0,0,0
+NAME,5,2025-26,Artificial Neural Network Lab,NAI4552,0,60,0,40,0,100,1,0,0,0
+NAME,5,2025-26,Minor Project-I,NAI4554,N/A,N/A,0,100,0,100,1,0,0,0
+NAME,5,2025-26,General Proficiency,NGP4501,N/A,N/A,0,100,0,100,1,0,0,0
+,,,,,,,,,,,,,,
+NAME,6,2025-26,Industrial Management,NHS4601,0,60,0,40,0,100,3,0,0,0
+NAME,6,2025-26,Design & Analysis of Algorithms,NCS4602,0,60,0,40,0,100,4,0,0,0
+NAME,6,2025-26,Compiler Design,NCS4604,0,60,0,40,0,100,4,0,0,0
+NAME,6,2025-26,Internet of Things,NPEC43914,0,60,0,40,0,100,3,0,0,0
+NAME,6,2025-26,Computer Vision,NPEC43922,0,60,0,40,0,100,3,0,0,0
+NAME,6,2025-26,Algorithms Lab,NCS4652,0,60,0,40,0,100,1,0,0,0
+NAME,6,2025-26,Compiler Design Lab,NCS4654,0,60,0,40,0,100,1,0,0,0
+NAME,6,2025-26,Seminar,NAI4651,N/A,N/A,0,100,0,100,1,0,0,0
+NAME,6,2025-26,Minor Project-II,NAI4653,N/A,N/A,0,100,0,100,1,0,0,0
+NAME,6,2025-26,General Proficiency,NGP4601,N/A,N/A,0,100,0,100,1,0,0,0
