@@ -474,7 +474,7 @@ def show() -> None:
     )
 
     df = pd.DataFrame(all_rows, columns=FINAL_COLUMNS)
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.dataframe(df, width="stretch", hide_index=True)
 
     st.divider()
 
@@ -500,7 +500,7 @@ def show() -> None:
                 data=_to_csv(df),
                 file_name=f"{filename_base}.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width="stretch",
                 key="cd_download_csv",
             )
         with dl2:
@@ -509,7 +509,7 @@ def show() -> None:
                 data=_to_xlsx(df),
                 file_name=f"{filename_base}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
+                width="stretch",
                 key="cd_download_xlsx",
             )
 

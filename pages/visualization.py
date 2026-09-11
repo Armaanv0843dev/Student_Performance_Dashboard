@@ -15,6 +15,7 @@ Sections
 """
 
 from __future__ import annotations
+import plotly.graph_objects as go
 
 import pandas as pd
 import plotly.express as px
@@ -101,6 +102,10 @@ def show() -> None:
     _render_credit_cgpa(df_filtered)
     st.markdown("---")
 
+    # ── E: Combined CIA Analysis (all semesters) ───────────────────────────────
+    _render_combined_cia(df, subject_col)
+    st.markdown("---")
+
     # ── Insights ──────────────────────────────────────────────────────────────
     _render_insights(df_filtered, df, subject_col, obtained_col, max_col)
 
@@ -112,28 +117,58 @@ def show() -> None:
 
 # ── Sidebar filters ───────────────────────────────────────────────────────────
 
+def _derive_year(df: pd.DataFrame) -> pd.DataFrame:
+    """Derive an academic Year column from Session or Semester."""
+    df = df.copy()
+    if "Session" in df.columns:
+        # Session like '2023-24' → use as Year label directly
+        df["_Year"] = df["Session"].astype(str).str.strip()
+    elif "Semester" in df.columns:
+        # Fallback: pair semesters → Year (1-2→Y1, 3-4→Y2, …)
+        sem_num = pd.to_numeric(df["Semester"], errors="coerce")
+        df["_Year"] = sem_num.apply(
+            lambda s: f"Year {int((s - 1) // 2) + 1}" if pd.notna(s) else "Unknown"
+        )
+    else:
+        df["_Year"] = "Unknown"
+    return df
+
+
 def _apply_filters(df: pd.DataFrame, subject_col: str) -> pd.DataFrame:
     """Render sidebar filters and return the filtered DataFrame."""
+
+    df = _derive_year(df)
 
     with st.sidebar:
         st.markdown("---")
         st.subheader("Filters")
 
-        # Semester filter
+        # ── Semester filter ───────────────────────────────────────────────────
         semesters = sorted(df["Semester"].dropna().unique().tolist())
         sem_options = ["All"] + [str(s) for s in semesters]
         semester_filter = st.selectbox(
-            "Semester",
+            "🗓️ Semester",
             options=sem_options,
             index=0,
             key="sem_filter",
         )
 
-        # Subject filter
+        # ── Year filter (Session-based) ───────────────────────────────────────
+        years = sorted(df["_Year"].dropna().unique().tolist())
+        year_options = ["All"] + years
+        year_filter = st.selectbox(
+            "📅 Academic Year",
+            options=year_options,
+            index=0,
+            key="year_filter",
+            help="Filter by academic session / year (e.g. 2023-24).",
+        )
+
+        # ── Subject filter ────────────────────────────────────────────────────
         subjects = sorted(df[subject_col].dropna().unique().tolist())
         sub_options = ["All"] + subjects
         subject_filter = st.selectbox(
-            "Subject",
+            "📖 Subject",
             options=sub_options,
             index=0,
             key="sub_filter",
@@ -142,6 +177,8 @@ def _apply_filters(df: pd.DataFrame, subject_col: str) -> pd.DataFrame:
     filtered = df.copy()
     if semester_filter != "All":
         filtered = filtered[filtered["Semester"].astype(str) == semester_filter]
+    if year_filter != "All":
+        filtered = filtered[filtered["_Year"] == year_filter]
     if subject_filter != "All":
         filtered = filtered[filtered[subject_col] == subject_filter]
 
@@ -540,7 +577,7 @@ def _render_grade_donut(df: pd.DataFrame) -> None:
         st.dataframe(
             grade_counts.rename(columns={"Count": "Subjects", "Share": "Share"}),
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
 
@@ -764,6 +801,306 @@ def _add_semester_improvement_insight(
             )
     except Exception:
         pass
+
+
+# ── Chart E: CIA / ESE / Lab Bar Charts ─────────────────────────────────────
+
+# Semester colour palette (up to 8 sems)
+_SEM_COLOURS = [
+    "#3B82F6",  # Sem 1 – blue
+    "#10B981",  # Sem 2 – emerald
+    "#F59E0B",  # Sem 3 – amber
+    "#EF4444",  # Sem 4 – red
+    "#8B5CF6",  # Sem 5 – violet
+    "#EC4899",  # Sem 6 – pink
+    "#06B6D4",  # Sem 7 – cyan
+    "#F97316",  # Sem 8 – orange
+]
+
+
+def _sem_colour_map(semesters: list) -> dict:
+    """Map each semester label to a fixed colour."""
+    sems_sorted = sorted(semesters, key=lambda s: (pd.to_numeric(s, errors="coerce"), s))
+    return {
+        str(s): _SEM_COLOURS[i % len(_SEM_COLOURS)]
+        for i, s in enumerate(sems_sorted)
+    }
+
+
+def _horizontal_bar(
+    data: pd.DataFrame,
+    subject_col: str,
+    pct_col: str,
+    obt_col: str,
+    max_col: str,
+    colour_map: dict,
+    sem_col: str = "Semester",
+) -> "go.Figure":
+    """
+    Build a horizontal grouped bar chart of *pct_col* per subject,
+    with one bar series per semester, colored by *colour_map*.
+    """
+    import plotly.graph_objects as go
+
+    fig = go.Figure()
+    sems = sorted(data[sem_col].unique(), key=lambda s: (pd.to_numeric(s, errors="coerce"), s))
+
+    for sem in sems:
+        sub = data[data[sem_col] == sem].copy()
+        sub = sub.sort_values(pct_col, ascending=True)
+        short = [s if len(s) <= 32 else s[:30] + "…" for s in sub[subject_col]]
+
+        fig.add_trace(
+            go.Bar(
+                name=f"Sem {sem}",
+                x=sub[pct_col],
+                y=short,
+                orientation="h",
+                marker_color=colour_map.get(str(sem), "#94a3b8"),
+                text=[f"{v:.1f}%" for v in sub[pct_col]],
+                textposition="outside",
+                customdata=sub[[subject_col, obt_col, max_col, sem_col]].values,
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    f"Sem %{{customdata[3]}} · "
+                    "%{customdata[1]:.0f} / %{customdata[2]:.0f}<br>"
+                    "Score: <b>%{x:.1f}%</b><extra></extra>"
+                ),
+            )
+        )
+
+    fig.update_layout(
+        barmode="group",
+        xaxis=dict(title="Percentage (%)", range=[0, 118]),
+        yaxis_title="",
+        height=max(380, len(data[subject_col].unique()) * 44),
+        legend=dict(
+            title="Semester",
+            orientation="h",
+            yanchor="bottom",
+            y=1.01,
+            xanchor="right",
+            x=1,
+        ),
+        margin=dict(t=55, b=30, l=10, r=90),
+    )
+    return fig
+
+
+def _render_combined_cia(df: pd.DataFrame, subject_col: str) -> None:
+    """
+    Three bar-chart tabs:
+      Tab 1 – CIA % per subject (all sems, full data)
+      Tab 2 – ESE % per subject (all sems, full data)
+      Tab 3 – Lab subjects % (all sems, full data)
+    Always uses the FULL unfiltered DataFrame so every semester is visible.
+    """
+    import plotly.graph_objects as go  # noqa: F401 (needed by _horizontal_bar)
+
+    st.subheader("📊 Combined Marks Analysis — CIA · ESE · Lab")
+    st.caption(
+        "Showing **all semesters** together, color-coded by semester. "
+        "Use the sidebar **Semester** or **Academic Year** filter to zoom in."
+    )
+
+    work = df.copy()
+    work["Semester"] = work["Semester"].astype(str)
+
+    for col in ["CIA_Obtained", "CIA_Max", "ESE_Obtained", "ESE_Max",
+                "Total_Obtained", "Total_Max"]:
+        if col in work.columns:
+            work[col] = pd.to_numeric(work[col], errors="coerce")
+
+    colour_map = _sem_colour_map(work["Semester"].dropna().unique().tolist())
+
+    tab_cia, tab_ese, tab_lab = st.tabs([
+        "📘 CIA — Subject-wise",
+        "📗 ESE — Subject-wise",
+        "🔬 Lab — Subject-wise",
+    ])
+
+    # ── TAB 1 · CIA ───────────────────────────────────────────────────────────
+    with tab_cia:
+        if "CIA_Obtained" not in work.columns or "CIA_Max" not in work.columns:
+            st.info("ℹ️ CIA columns not found in the dataset.")
+        else:
+            cia_w = work.dropna(subset=["CIA_Obtained", "CIA_Max"])
+            cia_w = cia_w[cia_w["CIA_Max"] > 0].copy()
+
+            if cia_w.empty:
+                st.info("No valid CIA data available.")
+            else:
+                cia_agg = (
+                    cia_w.groupby([subject_col, "Semester"], as_index=False)
+                    .agg(
+                        CIA_Obt=("CIA_Obtained", "sum"),
+                        CIA_Max_=("CIA_Max", "sum"),
+                    )
+                )
+                cia_agg["CIA_%"] = (cia_agg["CIA_Obt"] / cia_agg["CIA_Max_"] * 100).round(1)
+
+                overall_cia = (
+                    cia_w["CIA_Obtained"].sum() / cia_w["CIA_Max"].sum() * 100
+                    if cia_w["CIA_Max"].sum() > 0 else 0.0
+                )
+                best_row = cia_agg.loc[cia_agg["CIA_%"].idxmax()]
+                worst_row = cia_agg.loc[cia_agg["CIA_%"].idxmin()]
+
+                k1, k2, k3 = st.columns(3)
+                k1.metric("🎯 Overall CIA %", f"{overall_cia:.1f}%")
+                k2.metric(
+                    "🏆 Best CIA",
+                    (best_row[subject_col][:20] + "…") if len(best_row[subject_col]) > 20
+                    else best_row[subject_col],
+                    f"{best_row['CIA_%']:.1f}% · Sem {best_row['Semester']}",
+                )
+                k3.metric(
+                    "📉 Weakest CIA",
+                    (worst_row[subject_col][:20] + "…") if len(worst_row[subject_col]) > 20
+                    else worst_row[subject_col],
+                    f"{worst_row['CIA_%']:.1f}% · Sem {worst_row['Semester']}",
+                    delta_color="inverse",
+                )
+
+                st.markdown("")
+                fig_cia = _horizontal_bar(
+                    cia_agg, subject_col, "CIA_%", "CIA_Obt", "CIA_Max_", colour_map,
+                )
+                st.plotly_chart(fig_cia, width="stretch")
+                st.caption(
+                    "Each bar = CIA % for that subject in that semester. "
+                    "Grouped & color-coded by semester."
+                )
+
+    # ── TAB 2 · ESE ───────────────────────────────────────────────────────────
+    with tab_ese:
+        if "ESE_Obtained" not in work.columns or "ESE_Max" not in work.columns:
+            st.info("ℹ️ ESE columns not found in the dataset.")
+        else:
+            ese_w = work.dropna(subset=["ESE_Obtained", "ESE_Max"])
+            ese_w = ese_w[ese_w["ESE_Max"] > 0].copy()
+
+            if ese_w.empty:
+                st.info("No valid ESE data available.")
+            else:
+                ese_agg = (
+                    ese_w.groupby([subject_col, "Semester"], as_index=False)
+                    .agg(
+                        ESE_Obt=("ESE_Obtained", "sum"),
+                        ESE_Max_=("ESE_Max", "sum"),
+                    )
+                )
+                ese_agg["ESE_%"] = (ese_agg["ESE_Obt"] / ese_agg["ESE_Max_"] * 100).round(1)
+
+                overall_ese = (
+                    ese_w["ESE_Obtained"].sum() / ese_w["ESE_Max"].sum() * 100
+                    if ese_w["ESE_Max"].sum() > 0 else 0.0
+                )
+                best_row = ese_agg.loc[ese_agg["ESE_%"].idxmax()]
+                worst_row = ese_agg.loc[ese_agg["ESE_%"].idxmin()]
+
+                k1, k2, k3 = st.columns(3)
+                k1.metric("🎯 Overall ESE %", f"{overall_ese:.1f}%")
+                k2.metric(
+                    "🏆 Best ESE",
+                    (best_row[subject_col][:20] + "…") if len(best_row[subject_col]) > 20
+                    else best_row[subject_col],
+                    f"{best_row['ESE_%']:.1f}% · Sem {best_row['Semester']}",
+                )
+                k3.metric(
+                    "📉 Weakest ESE",
+                    (worst_row[subject_col][:20] + "…") if len(worst_row[subject_col]) > 20
+                    else worst_row[subject_col],
+                    f"{worst_row['ESE_%']:.1f}% · Sem {worst_row['Semester']}",
+                    delta_color="inverse",
+                )
+
+                st.markdown("")
+                fig_ese = _horizontal_bar(
+                    ese_agg, subject_col, "ESE_%", "ESE_Obt", "ESE_Max_", colour_map,
+                )
+                st.plotly_chart(fig_ese, width="stretch")
+                st.caption(
+                    "Each bar = ESE % for that subject in that semester. "
+                    "Grouped & color-coded by semester."
+                )
+
+    # ── TAB 3 · LAB ───────────────────────────────────────────────────────────
+    with tab_lab:
+        # Detect lab/practical subjects:
+        # 1) Subject name contains 'lab' (case-insensitive, whole word)
+        # 2) OR ESE_Max == 0 (pure internal / practical)
+        # Exclude 'General Proficiency' — kept only in CIA tab
+        gp_mask = work[subject_col].str.contains(
+            r"general.?proficiency", case=False, na=False, regex=True
+        )
+        lab_mask = work[subject_col].str.contains(
+            r"\blab\b", case=False, na=False, regex=True
+        )
+        if "ESE_Max" in work.columns:
+            lab_mask = lab_mask | (work["ESE_Max"].fillna(0) == 0)
+
+        # Remove GP from lab set
+        lab_mask = lab_mask & ~gp_mask
+
+        lab_w = work[lab_mask].copy()
+
+        if lab_w.empty:
+            st.info(
+                "ℹ️ No lab/practical subjects found. "
+                "Detected by 'Lab' in subject name or subjects with no ESE component."
+            )
+        else:
+            obt_c = "Total_Obtained" if "Total_Obtained" in lab_w.columns else "CIA_Obtained"
+            max_c = "Total_Max" if "Total_Max" in lab_w.columns else "CIA_Max"
+
+            lab_w2 = lab_w.dropna(subset=[obt_c, max_c])
+            lab_w2 = lab_w2[lab_w2[max_c] > 0].copy()
+
+            if lab_w2.empty:
+                st.info("No valid lab marks data.")
+            else:
+                lab_agg = (
+                    lab_w2.groupby([subject_col, "Semester"], as_index=False)
+                    .agg(
+                        Lab_Obt=(obt_c, "sum"),
+                        Lab_Max_=(max_c, "sum"),
+                    )
+                )
+                lab_agg["Lab_%"] = (lab_agg["Lab_Obt"] / lab_agg["Lab_Max_"] * 100).round(1)
+
+                overall_lab = (
+                    lab_w2[obt_c].sum() / lab_w2[max_c].sum() * 100
+                    if lab_w2[max_c].sum() > 0 else 0.0
+                )
+                best_row = lab_agg.loc[lab_agg["Lab_%"].idxmax()]
+                worst_row = lab_agg.loc[lab_agg["Lab_%"].idxmin()]
+
+                k1, k2, k3 = st.columns(3)
+                k1.metric("🔬 Overall Lab %", f"{overall_lab:.1f}%")
+                k2.metric(
+                    "🏆 Best Lab",
+                    (best_row[subject_col][:22] + "…") if len(best_row[subject_col]) > 22
+                    else best_row[subject_col],
+                    f"{best_row['Lab_%']:.1f}% · Sem {best_row['Semester']}",
+                )
+                k3.metric(
+                    "📉 Weakest Lab",
+                    (worst_row[subject_col][:22] + "…") if len(worst_row[subject_col]) > 22
+                    else worst_row[subject_col],
+                    f"{worst_row['Lab_%']:.1f}% · Sem {worst_row['Semester']}",
+                    delta_color="inverse",
+                )
+
+                st.markdown("")
+                fig_lab = _horizontal_bar(
+                    lab_agg, subject_col, "Lab_%", "Lab_Obt", "Lab_Max_", colour_map,
+                )
+                st.plotly_chart(fig_lab, width="stretch")
+                st.caption(
+                    "Lab subjects = 'Lab' in subject name OR no ESE component. "
+                    "Score = Total marks % for that practical."
+                )
 
 
 # ── Download ──────────────────────────────────────────────────────────────────
