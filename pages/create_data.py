@@ -269,7 +269,7 @@ def show() -> None:
             with ts2:
                 sgpa = st.number_input(
                     "SGPA",
-                    min_value=0,
+                    min_value=0.0,
                     max_value=10.0,
                     value=0.0,
                     step=0.01,
