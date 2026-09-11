@@ -889,19 +889,14 @@ def _horizontal_bar(
 
 def _render_combined_cia(df: pd.DataFrame, subject_col: str) -> None:
     """
-    Three bar-chart tabs:
-      Tab 1 – CIA % per subject (all sems, full data)
-      Tab 2 – ESE % per subject (all sems, full data)
-      Tab 3 – Lab subjects % (all sems, full data)
-    Always uses the FULL unfiltered DataFrame so every semester is visible.
+    Three bar-chart tabs with inline Year-wise and Semester-wise filters:
+      Tab 1 – CIA % per subject
+      Tab 2 – ESE % per subject
+      Tab 3 – Lab subjects %
     """
     import plotly.graph_objects as go  # noqa: F401 (needed by _horizontal_bar)
 
     st.subheader("📊 Combined Marks Analysis — CIA · ESE · Lab")
-    st.caption(
-        "Showing **all semesters** together, color-coded by semester. "
-        "Use the sidebar **Semester** or **Academic Year** filter to zoom in."
-    )
 
     work = df.copy()
     work["Semester"] = work["Semester"].astype(str)
@@ -911,7 +906,61 @@ def _render_combined_cia(df: pd.DataFrame, subject_col: str) -> None:
         if col in work.columns:
             work[col] = pd.to_numeric(work[col], errors="coerce")
 
+    # ── Derive Year column (same logic as _derive_year) ─────────────────────
+    if "Session" in work.columns:
+        work["_Year"] = work["Session"].astype(str).str.strip()
+    elif "Semester" in work.columns:
+        sem_num = pd.to_numeric(work["Semester"], errors="coerce")
+        work["_Year"] = sem_num.apply(
+            lambda s: f"Year {int((s - 1) // 2) + 1}" if pd.notna(s) else "Unknown"
+        )
+    else:
+        work["_Year"] = "Unknown"
+
+    # ── Inline filters ────────────────────────────────────────────────────────
+    all_years = sorted(work["_Year"].dropna().unique().tolist())
+    all_sems  = sorted(work["Semester"].dropna().unique().tolist(),
+                       key=lambda s: (pd.to_numeric(s, errors="coerce"), s))
+
+    fc1, fc2 = st.columns(2)
+    with fc1:
+        selected_year = st.selectbox(
+            "📅 Filter by Academic Year",
+            options=["All"] + all_years,
+            index=0,
+            key="cia_year_filter",
+            help="Filter all three tabs by academic session / year.",
+        )
+    with fc2:
+        selected_sem = st.selectbox(
+            "🗓️ Filter by Semester",
+            options=["All"] + all_sems,
+            index=0,
+            key="cia_sem_filter",
+            help="Filter all three tabs to a specific semester.",
+        )
+
+    if selected_year != "All":
+        work = work[work["_Year"] == selected_year]
+    if selected_sem != "All":
+        work = work[work["Semester"] == selected_sem]
+
+    if work.empty:
+        st.warning("⚠️ No data for the selected Year / Semester combination.")
+        return
+
+    # Rebuild colour map after filtering so it only shows relevant sems
     colour_map = _sem_colour_map(work["Semester"].dropna().unique().tolist())
+
+    filter_note = []
+    if selected_year != "All":
+        filter_note.append(f"Year **{selected_year}**")
+    if selected_sem != "All":
+        filter_note.append(f"Semester **{selected_sem}**")
+    if filter_note:
+        st.caption(f"Showing: {' · '.join(filter_note)}")
+    else:
+        st.caption("Showing **all semesters**, color-coded by semester.")
 
     tab_cia, tab_ese, tab_lab = st.tabs([
         "📘 CIA — Subject-wise",
@@ -928,7 +977,7 @@ def _render_combined_cia(df: pd.DataFrame, subject_col: str) -> None:
             cia_w = cia_w[cia_w["CIA_Max"] > 0].copy()
 
             if cia_w.empty:
-                st.info("No valid CIA data available.")
+                st.info("No valid CIA data available for the selected filters.")
             else:
                 cia_agg = (
                     cia_w.groupby([subject_col, "Semester"], as_index=False)
@@ -981,7 +1030,7 @@ def _render_combined_cia(df: pd.DataFrame, subject_col: str) -> None:
             ese_w = ese_w[ese_w["ESE_Max"] > 0].copy()
 
             if ese_w.empty:
-                st.info("No valid ESE data available.")
+                st.info("No valid ESE data available for the selected filters.")
             else:
                 ese_agg = (
                     ese_w.groupby([subject_col, "Semester"], as_index=False)
@@ -1047,7 +1096,7 @@ def _render_combined_cia(df: pd.DataFrame, subject_col: str) -> None:
 
         if lab_w.empty:
             st.info(
-                "ℹ️ No lab/practical subjects found. "
+                "ℹ️ No lab/practical subjects found for the selected filters. "
                 "Detected by 'Lab' in subject name or subjects with no ESE component."
             )
         else:
@@ -1058,7 +1107,7 @@ def _render_combined_cia(df: pd.DataFrame, subject_col: str) -> None:
             lab_w2 = lab_w2[lab_w2[max_c] > 0].copy()
 
             if lab_w2.empty:
-                st.info("No valid lab marks data.")
+                st.info("No valid lab marks data for the selected filters.")
             else:
                 lab_agg = (
                     lab_w2.groupby([subject_col, "Semester"], as_index=False)
